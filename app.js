@@ -5,9 +5,11 @@ import multer from "multer"
 import fs from "fs"
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const uploadsDir = './uploads'
 
 const app = express()
 
@@ -16,13 +18,33 @@ app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 
 
+let files = fs.readdirSync(uploadsDir)
+
+let latestPath = `${uploadsDir}/${files[0]}`
+let latestTimeStamp = fs.statSync(latestPath).mtime.getTime()
+
+files.forEach(file => {
+
+  let path = `${uploadsDir}/${file}`
+
+  let timeStamp = fs.statSync(path).mtime.getTime()
+
+  if (timeStamp > latestTimeStamp) {
+    latestTimeStamp = timeStamp
+    latestPath = path
+  }
+});
+
+
+
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/')
+        cb(null, uploadsDir)
     },
     filename: (req, file, cb) => {
         let fileName = file.originalname.trim().replace(/\s/g, '-').replace(".mp4", '')
-        console.log(`'${file.originalname.trim().replace(/\s/g, '-')}'`)
+        // console.log(`'${file.originalname.trim().replace(/\s/g, '-')}'`)
         cb(null, file.fieldname + '-' + fileName + '-' + Date.now() + path.extname(file.originalname))
     }
 })
@@ -49,7 +71,16 @@ app.get("/ping", (req, res) => {
 
 
 app.get('/video', (req, res) => {
-    res.sendFile(__dirname + "/uploads/video-Kingpin-is-Fat-(Laugh)-1696205575909.mp4")
+    try{
+        const file = __dirname + latestPath.replace(/[.]/, '')
+        if(!fs.existsSync(file)){
+            throw "file dosen't exist"
+        }
+        console.log(file)
+        res.sendFile(file)
+    }catch(err){
+        res.status(400).json({ error: err })
+    }
 })
 
 
@@ -59,9 +90,14 @@ app.get('/', (req, res) => {
     if(!range){
         res.status(400).json({error: "Requires Range header"})
     }
-    const videoPath = "./uploads/video-Kingpin-is-Fat-(Laugh)-1696205575909.mp4"
     try{
-        const videoSize = fs.statSync(videoPath).size
+        // const videoPath = latestPath
+        const file = __dirname + latestPath.replace(/[.]/, '')
+        if(!fs.existsSync(file)){
+            throw "file dosen't exist"
+        }
+        const videoSize = fs.statSync(latestPath).size
+        // console.log(videoSize)
         const CHUNK_SIZE = 10 ** 6
         const start = Number(range.replace(/\D/g, ""))
         const end = Math.min(start + CHUNK_SIZE, videoSize - 1)
@@ -74,11 +110,11 @@ app.get('/', (req, res) => {
         }
     
         res.writeHead(206, headers)
-        const videoStream = fs.createReadStream(videoPath, {start, end})
+        const videoStream = fs.createReadStream(latestPath, {start, end})
         videoStream.pipe(res)
     }catch(err){
         console.log(err)
-        res.status(400).json({error: err.message})
+        res.status(400).json({error: (err.message ? err.message : err)})
     }
 })
 
