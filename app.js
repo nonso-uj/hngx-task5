@@ -7,10 +7,12 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
 
+// GET LATEST VIDEO FILE 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const uploadsDir = './uploads'
 
+// START EXPRESS APP
 const app = express()
 
 app.use(cors())
@@ -18,22 +20,22 @@ app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 
 
-let files = fs.readdirSync(uploadsDir)
 
-let latestPath = `${uploadsDir}/${files[0]}`
-let latestTimeStamp = fs.statSync(latestPath).mtime.getTime()
-
-files.forEach(file => {
-
-  let path = `${uploadsDir}/${file}`
-
-  let timeStamp = fs.statSync(path).mtime.getTime()
-
-  if (timeStamp > latestTimeStamp) {
-    latestTimeStamp = timeStamp
-    latestPath = path
-  }
-});
+function latestVideo(){
+    // GET LATEST VIDEO FILE 
+    let files = fs.readdirSync(uploadsDir)
+    let latestPath = `${uploadsDir}/${files[0]}`
+    let latestTimeStamp = fs.statSync(latestPath).mtime.getTime()
+    files.forEach(file => {
+      let path = `${uploadsDir}/${file}`
+      let timeStamp = fs.statSync(path).mtime.getTime()
+      if (timeStamp > latestTimeStamp) {
+        latestTimeStamp = timeStamp
+        latestPath = path
+      }
+    });
+    return latestPath
+} 
 
 
 
@@ -48,6 +50,7 @@ const storage = multer.diskStorage({
         cb(null, file.fieldname + '-' + fileName + '-' + Date.now() + path.extname(file.originalname))
     }
 })
+
 const upload = multer({
     storage: storage,
     limits: {
@@ -62,6 +65,7 @@ const upload = multer({
     }
 })
 
+
 app.get("/ping", (req, res) => {
     res.status(200).json({
         success: true,
@@ -71,6 +75,7 @@ app.get("/ping", (req, res) => {
 
 
 app.get('/video', (req, res) => {
+    let latestPath = latestVideo()
     try{
         const file = __dirname + latestPath.replace(/[.]/, '')
         if(!fs.existsSync(file)){
@@ -79,7 +84,7 @@ app.get('/video', (req, res) => {
         console.log(file)
         res.sendFile(file)
     }catch(err){
-        res.status(400).json({ error: err })
+        res.status(400).json({ error: (err.message ? err.message : err) })
     }
 })
 
@@ -91,7 +96,7 @@ app.get('/', (req, res) => {
         res.status(400).json({error: "Requires Range header"})
     }
     try{
-        // const videoPath = latestPath
+        let latestPath = latestVideo()
         const file = __dirname + latestPath.replace(/[.]/, '')
         if(!fs.existsSync(file)){
             throw "file dosen't exist"
