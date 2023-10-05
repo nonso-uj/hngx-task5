@@ -6,6 +6,7 @@ import fs from "fs"
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
+import {v4 as uuid4} from "uuid"
 
 // GET LATEST VIDEO FILE 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,22 +22,12 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 
 
-function latestVideo(){
-    // GET LATEST VIDEO FILE 
-    let files = fs.readdirSync(uploadsDir)
-    let latestPath = `${uploadsDir}/${files[0]}`
-    let latestTimeStamp = fs.statSync(latestPath).mtime.getTime()
-    files.forEach(file => {
-      let path = `${uploadsDir}/${file}`
-      let timeStamp = fs.statSync(path).mtime.getTime()
-      if (timeStamp > latestTimeStamp) {
-        latestTimeStamp = timeStamp
-        latestPath = path
-      }
-    });
-    return latestPath
-} 
-
+const getVideoPath = (uuid) => {
+    const jsonFile = fs.readFileSync('fileNames.json')
+    const jsonData = JSON.parse(jsonFile)
+    const filePath = jsonData.files.find((file) => file[uuid])
+    return filePath[uuid]
+}
 
 
 
@@ -74,10 +65,13 @@ app.get("/ping", (req, res) => {
 });
 
 
-app.get('/video', (req, res) => {
-    let latestPath = latestVideo()
+app.get('/video/:uuid', (req, res) => {
+    const uuid = req.params.uuid.toString()
+    filePath = getVideoPath(uuid)
+    
+
     try{
-        const file = __dirname + latestPath.replace(/[.]/, '')
+        const file = path.join(__dirname, filePath)
         if(!fs.existsSync(file)){
             throw "file dosen't exist"
         }
@@ -89,20 +83,26 @@ app.get('/video', (req, res) => {
 })
 
 
-app.get('/', (req, res) => {
+app.get('/:uuid', (req, res) => {
     const range = req.headers.range
+    const uuid = req.params.uuid.toString()
 
     if(!range){
         res.status(400).json({error: "Requires Range header"})
     }
+    if(!uuid){
+        res.status(400).json({error: "Requires uuid param"})
+    }
+
     try{
-        let latestPath = latestVideo()
-        const file = __dirname + latestPath.replace(/[.]/, '')
+        const filePath = getVideoPath(uuid)
+        const file = path.join(__dirname, filePath)
+        // console.log(file)
         if(!fs.existsSync(file)){
             throw "file dosen't exist"
         }
-        const videoSize = fs.statSync(latestPath).size
-        // console.log(videoSize)
+
+        const videoSize = fs.statSync(file).size
         const CHUNK_SIZE = 10 ** 6
         const start = Number(range.replace(/\D/g, ""))
         const end = Math.min(start + CHUNK_SIZE, videoSize - 1)
@@ -115,7 +115,7 @@ app.get('/', (req, res) => {
         }
     
         res.writeHead(206, headers)
-        const videoStream = fs.createReadStream(latestPath, {start, end})
+        const videoStream = fs.createReadStream(file, {start, end})
         videoStream.pipe(res)
     }catch(err){
         console.log(err)
@@ -124,14 +124,94 @@ app.get('/', (req, res) => {
 })
 
 
-app.post("/", upload.single('video'), (req, res) => {
-    res.status(200).json({
-        message: "received",
-        filename: req.file.filename
-    })}, (error, req, res, next) => {
-        res.status(400).send({ error: error.message })
+
+
+app.post('/create', (req, res) => {
+    try{
+        const uuid = uuid4()
+        const fileName = Date.now().toString() + '.mp4'
+        const filePath = path.join(uploadsDir, fileName)
+        fs.openSync(filePath, 'w')
+
+        console.log('creating')
+        
+        if(!fs.existsSync(filePath)){
+            throw "file not created"
+        }
+
+        const jsonFile = fs.readFileSync('fileNames.json')
+        const jsonData = JSON.parse(jsonFile)
+        jsonData.files.push({
+            [uuid]: filePath
+        })
+        fs.writeFileSync('fileNames.json', JSON.stringify(jsonData, null, "\t"))
+
+        res.status(200).json({
+            message: "File created",
+            file_id: uuid
+        })
+    }catch(err){
+        console.log(err)
+        res.status(400).json({error: (err.message ? err.message : err)})
+    }
+})
+
+
+
+app.post("/:uuid", (req, res) => {
+    console.log("********START INCOMING DATA************")
+    const uuid = req.params.uuid.toString()
+
+    const filePath = getVideoPath(uuid)
+
+    console.log('path= ', uuid, filePath)
+
+    const newFileStream = fs.createWriteStream(filePath)
+    let size = 0
+    
+    req.on('data', (chunk) => {
+        console.log('********NEW CHUNK************')
+        console.log(chunk)
+        size += chunk.length
+
+        if(size > 10485760){
+            newFileStream.end()
+            // req.destroy()
+            // res.json({
+            //     message: "file limit exceded",
+            //     file_id: uuid
+            // })
+            // return res.end()
+            return
+        }else{
+            newFileStream.write(chunk)
+        }
+
+        newFileStream.on('end', () => {
+            res.status(200).json({
+                message: "received",
+                file_id: uuid
+            })
+        })
+    })
+
+    
+    req.on('end', () => {
+        newFileStream.end()
+        console.log('Video received and saved')
+        // res.status(200).json({
+        //     message: "received",
+        //     file_id: uuid
+        // })
+    })
+    
+    
+
+    console.log("********END INCOMING DATA************")
+
     }
 )
+
 
 
 app.all("*", (req, res) => {
