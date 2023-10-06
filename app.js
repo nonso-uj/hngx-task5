@@ -9,10 +9,10 @@ import {v4 as uuid4} from "uuid"
 import dotenv from "dotenv";
 
 // DEEPGRAM
-import { execSync as exec } from 'child_process'
+// import { execSync as exec } from 'child_process'
 import pkg from '@deepgram/sdk';
 const { Deepgram } = pkg;
-import ffmpegStatic from 'ffmpeg-static'
+// import ffmpegStatic from 'ffmpeg-static'
 
 dotenv.config();
 
@@ -45,6 +45,13 @@ app.get("/api/ping", (req, res) => {
         message: "pong",
     });
 });
+
+
+app.get("/api/all/video", (req, res) => {
+    const jsonFile = fs.readFileSync('fileNames.json')
+    const jsonData = JSON.parse(jsonFile)
+    res.status(200).json(jsonData)
+})
 
 
 app.get('/api/video-info/:uuid', (req, res) => {
@@ -208,21 +215,7 @@ app.get('/api/transcription/:uuid', async (req, res) => {
 const deepgram = new Deepgram(process.env.DEEPGRAM_API_KEY)
 
 
-// async function ffmpeg(command) {
-//     return new Promise((resolve, reject) => {
-//       exec(`${ffmpegStatic} ${command}`, (err, stderr, stdout) => {
-//         if (err) reject(err)
-//         resolve(stdout)
-//       })
-//     })
-//   }
-  
-
-
 async function transcribeVideo(filePath){
-    // console.log(filePath.replace('.mp4', ''))
-    // ffmpeg(`-hide_banner -y -i ${filePath.replace('.mp4', '')} ${filePath}`)
-
     const audioFile = {
         buffer: fs.readFileSync(`${filePath}`),
         mimetype: 'video/mp4',
