@@ -31,7 +31,7 @@ const getVideoPath = (uuid) => {
 
 
 
-app.get("/ping", (req, res) => {
+app.get("/api/ping", (req, res) => {
     res.status(200).json({
         success: true,
         message: "pong",
@@ -39,7 +39,7 @@ app.get("/ping", (req, res) => {
 });
 
 
-app.get('/video-info/:uuid', (req, res) => {
+app.get('/api/video-info/:uuid', (req, res) => {
     const uuid = req.params.uuid.toString()
     const filePath = getVideoPath(uuid)
     
@@ -56,7 +56,7 @@ app.get('/video-info/:uuid', (req, res) => {
 })
 
 
-app.get('/:uuid', (req, res) => {
+app.get('/api/:uuid', (req, res) => {
     const range = req.headers.range
     const uuid = req.params.uuid.toString()
 
@@ -98,7 +98,7 @@ app.get('/:uuid', (req, res) => {
 
 
 
-app.post('/create', (req, res) => {
+app.post('/api/create', (req, res) => {
     try{
         const uuid = uuid4()
         const fileName = Date.now().toString() + '.mp4'
@@ -130,7 +130,7 @@ app.post('/create', (req, res) => {
 
 
 
-app.post("/:uuid", (req, res) => {
+app.post("/api/:uuid", (req, res) => {
     // console.log("********START INCOMING DATA************")
     const uuid = req.params.uuid.toString()
     const filePath = getVideoPath(uuid)
