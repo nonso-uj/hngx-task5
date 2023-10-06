@@ -84,7 +84,57 @@ This Node.js REST API allows you to save streamed videos on disk storage and str
   Video Stream (MP4 Content)
   ```
 
-### 5. **GET /api/video-info/:uuid**
+
+### 5. **GET /api/transcription/:uuid**
+- **Description:** Transcribe a saved video using a UUID.
+- **Example Request:**
+  ```
+  GET /api/transcription/:uuid
+  ```
+- **Example Response:**
+  ```json
+  {
+       "transcription": {
+           "channels": [
+               {
+                   "alternatives": [
+                       {
+                           "transcript": "there's no escape where ... conceivable way",
+                           "confidence": 0.9291992,
+                           "words": [
+                               {
+                                   "word": "there's",
+                                   "start": 0.4389524,
+                                   "end": 0.75819045,
+                                   "confidence": 0.9975586
+                               }, ...
+                               ]
+                       }
+                   ]
+               }
+           ]
+       }
+   }
+   ```
+
+### 6. **GET /api/all/video**
+- **Description:** Get all saved video UUIDs and paths videos saved on the server.
+- **Example Request:**
+  ```
+  GET /api/all/video
+  ```
+- **Example Response:**
+  ```json
+  {
+       "files": [
+           {
+               "60006582-fddd-429e-a6ca-9a67cb87a273": "uploads\\1696555244734.mp4"
+           }
+       ]
+   }
+  ```
+
+### 7. **GET /api/video-info/:uuid**
 - **Description:** Get all file details of a video saved on the server using the provided UUID as a parameter.
 - **Example Request:**
   ```
