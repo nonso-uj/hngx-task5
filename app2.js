@@ -39,7 +39,7 @@ app.get('/create', (req, res) => {
         const options = {
             hostname: '127.0.0.1',
             port: 4000,
-            path: '/create',
+            path: '/api/create',
             method: 'POST'
         }
 
@@ -49,10 +49,7 @@ app.get('/create', (req, res) => {
             response.on('data', async function (chunk) {
                 let data = await JSON.parse(chunk)
                 console.log(data)
-                res.json({
-                    file_id: data.file_id,
-                    message: 'File Created again',
-                })
+                res.json(data)
             });
         })
 
@@ -81,9 +78,9 @@ app.get('/create', (req, res) => {
 
 app.get('/', (req, res) => {
     try{
-        const file = __dirname + "/send/piece.mp4"
+        // const file = __dirname + "/send/piece.mp4"
         // const file = __dirname + "/send/tutorial.mp4"
-        // const file = __dirname + "/send/riddle.mp4"
+        const file = __dirname + "/send/riddle.mp4"
         if(!fs.existsSync(file)){
             throw "file dosen't exist"
         }
@@ -93,7 +90,7 @@ app.get('/', (req, res) => {
         const options = {
             hostname: '127.0.0.1',
             port: 4000,
-            path: '/ea37940b-93cf-4062-9632-773e95cb71f7',
+            path: '/api/60006582-fddd-429e-a6ca-9a67cb87a273',
             method: 'POST',
         }
 
@@ -107,10 +104,7 @@ app.get('/', (req, res) => {
                 if(response.statusCode == 400){
                     readStream.destroy()
                 }
-                res.json({
-                    ...data,
-                    info: 'File Saved',
-                })
+                res.json(data)
             });
         })
 

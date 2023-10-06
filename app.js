@@ -1,12 +1,20 @@
 import express from "express"
 import cors from "cors"
 import bodyParser from "body-parser"
-import multer from "multer"
 import fs from "fs"
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
 import {v4 as uuid4} from "uuid"
+import dotenv from "dotenv";
+
+// DEEPGRAM
+import { execSync as exec } from 'child_process'
+import pkg from '@deepgram/sdk';
+const { Deepgram } = pkg;
+import ffmpegStatic from 'ffmpeg-static'
+
+dotenv.config();
 
 // GET LATEST VIDEO FILE 
 const __filename = fileURLToPath(import.meta.url);
@@ -53,10 +61,10 @@ app.get('/api/video-info/:uuid', (req, res) => {
     }catch(err){
         res.status(400).json({ error: (err.message ? err.message : err) })
     }
-})
+});
 
 
-app.get('/api/:uuid', (req, res) => {
+app.get('/api/stream/:uuid', (req, res) => {
     const range = req.headers.range
     const uuid = req.params.uuid.toString()
 
@@ -93,7 +101,7 @@ app.get('/api/:uuid', (req, res) => {
         // console.log(err)
         res.status(400).json({error: (err.message ? err.message : err)})
     }
-})
+});
 
 
 
@@ -126,11 +134,11 @@ app.post('/api/create', (req, res) => {
         // console.log(err)
         res.status(400).json({error: (err.message ? err.message : err)})
     }
-})
+});
 
 
 
-app.post("/api/:uuid", (req, res) => {
+app.post("/api/save/:uuid", (req, res) => {
     // console.log("********START INCOMING DATA************")
     const uuid = req.params.uuid.toString()
     const filePath = getVideoPath(uuid)
@@ -176,12 +184,61 @@ app.post("/api/:uuid", (req, res) => {
     console.log("********END INCOMING DATA************")
 
     }
-)
+);
+
+
+
+app.get('/api/transcription/:uuid', async (req, res) => {
+    try{
+        const uuid = req.params.uuid.toString()
+        const filePath = getVideoPath(uuid)
+        if(!fs.existsSync(filePath)){
+            throw "file dosen't exist"
+        }
+        const transcript = await transcribeVideo(filePath)
+        console.log('transcription= ', transcript)
+        res.json({ transcription: transcript })
+    }catch(err){
+        console.log("Transcript error", err)
+        return `Error= ${err.message ? err.message : err}`
+    }
+})
+
+
+const deepgram = new Deepgram(process.env.DEEPGRAM_API_KEY)
+
+
+// async function ffmpeg(command) {
+//     return new Promise((resolve, reject) => {
+//       exec(`${ffmpegStatic} ${command}`, (err, stderr, stdout) => {
+//         if (err) reject(err)
+//         resolve(stdout)
+//       })
+//     })
+//   }
+  
+
+
+async function transcribeVideo(filePath){
+    // console.log(filePath.replace('.mp4', ''))
+    // ffmpeg(`-hide_banner -y -i ${filePath.replace('.mp4', '')} ${filePath}`)
+
+    const audioFile = {
+        buffer: fs.readFileSync(`${filePath}`),
+        mimetype: 'video/mp4',
+    }
+    const response = await deepgram.transcription.preRecorded(audioFile, {
+        punctuation: true,
+    })
+    console.log(response.results)
+    return response.results
+}
+
 
 
 
 app.all("*", (req, res) => {
     res.status(400).json({error: `Can't find ${req.originalUrl} on this server`});
-})
+});
 
 export default app;
