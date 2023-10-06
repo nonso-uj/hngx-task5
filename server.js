@@ -3,7 +3,7 @@ import app from "./app.js";
 
 dotenv.config();
 
-const mode = process.env.NODE_ENV;
+// const mode = process.env.NODE_ENV;
 const port = process.env.PORT || 4000;
 
 const server = app.listen(port, () => {

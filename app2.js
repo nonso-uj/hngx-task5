@@ -82,19 +82,18 @@ app.get('/create', (req, res) => {
 app.get('/', (req, res) => {
     try{
         const file = __dirname + "/send/piece.mp4"
+        // const file = __dirname + "/send/tutorial.mp4"
+        // const file = __dirname + "/send/riddle.mp4"
         if(!fs.existsSync(file)){
             throw "file dosen't exist"
         }
 
-        // const postData = {
-        //     file_id: '36f8567f-4c4c-4431-a136-96bbdefe1bf8'
-        // }
         const readStream = fs.createReadStream(file)
 
         const options = {
             hostname: '127.0.0.1',
             port: 4000,
-            path: '/2deb2ffc-a9eb-49f9-b975-6dd7b875ed71',
+            path: '/ea37940b-93cf-4062-9632-773e95cb71f7',
             method: 'POST',
         }
 
@@ -104,15 +103,10 @@ app.get('/', (req, res) => {
 
             response.on('data', async function (chunk) {
                 let data = await JSON.parse(chunk)
-                console.log(data)
-                if(data && data.message == 'stop'){
+                console.log(chunk)
+                if(response.statusCode == 400){
                     readStream.destroy()
                 }
-            });
-
-            response.on('end', async function (chunk) {
-                let data = await JSON.parse(chunk)
-                console.log(data)
                 res.json({
                     ...data,
                     info: 'File Saved',
@@ -123,9 +117,6 @@ app.get('/', (req, res) => {
 
 
         readStream.on('data', (chunk) => {
-            // request.write(JSON.stringify({
-            //     data: postData
-            // }))
             request.write(chunk)
         })
 
@@ -138,14 +129,13 @@ app.get('/', (req, res) => {
         })
         
         request.on('error', (e) => {
+            readStream.destroy()
             console.log('error= ', e.message)
         })
         
     }catch(err){
         res.status(400).json({ error: (err.message ? err.message : err) })
     }
-    
-    // res.json({message: 'Video sent'})
     
 })
 
