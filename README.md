@@ -51,11 +51,11 @@ This Node.js REST API allows you to save streamed videos on disk storage and str
   }
   ```
 
-### 3. **POST /api/:uuid**
+### 3. **POST /api/save/:uuid**
 - **Description:** Stream video data to be saved on the server using the provided UUID as a parameter.
 - **Example Request:**
   ```
-  POST /api/3a8d4b26-2d9a-4c48-a687-25e08782c590
+  POST /api/save/3a8d4b26-2d9a-4c48-a687-25e08782c590
   ```
 - **Example Response:**
   ```json
@@ -73,11 +73,11 @@ This Node.js REST API allows you to save streamed videos on disk storage and str
   }
   ```
 
-### 4. **GET /api/:uuid**
+### 4. **GET /api/stream/:uuid**
 - **Description:** Stream videos saved on the server using the provided UUID as a parameter.
 - **Example Request:**
   ```
-  GET /api/3a8d4b26-2d9a-4c48-a687-25e08782c590
+  GET /api/stream/3a8d4b26-2d9a-4c48-a687-25e08782c590
   ```
 - **Example Response:**
   ```
