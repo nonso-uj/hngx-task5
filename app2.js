@@ -1,5 +1,6 @@
 import express from "express"
 import http from "http"
+import https from "https"
 import cors from "cors"
 import bodyParser from "body-parser"
 import fs from "fs"
@@ -36,14 +37,7 @@ process.on("unhandledRejection", (err)=> {
 
 app.get('/create', (req, res) => {
     try{
-        const options = {
-            hostname: '127.0.0.1',
-            port: 4000,
-            path: '/api/create',
-            method: 'POST'
-        }
-
-        const request = http.request(options, (response) => {
+        const request = http.get('https://hngx-task5.onrender.com/api/ping', (response) => {
             console.log(`Server B responded with status code: ${response.statusCode}`)
             response.setEncoding('utf8');
             response.on('data', async function (chunk) {
@@ -71,6 +65,43 @@ app.get('/create', (req, res) => {
 })
 
 
+// app.get('/create', (req, res) => {
+//     try{
+//         const options = {
+//             hostname: '127.0.0.1',
+//             port: 4000,
+//             path: '/api/create',
+//             method: 'POST'
+//         }
+
+//         const request = http.request(options, (response) => {
+//             console.log(`Server B responded with status code: ${response.statusCode}`)
+//             response.setEncoding('utf8');
+//             response.on('data', async function (chunk) {
+//                 let data = await JSON.parse(chunk)
+//                 console.log(data)
+//                 res.json(data)
+//             });
+//         })
+
+
+//         request.on('error', (e) => {
+//             console.log('error= ', e.message)
+//         })
+        
+//         request.end()
+        
+
+        
+        
+//         }catch(err){
+//             res.status(400).json({ error: (err.message ? err.message : err) })
+//         }
+
+    
+// })
+
+
 
 
 
@@ -88,19 +119,25 @@ app.get('/', (req, res) => {
         const readStream = fs.createReadStream(file)
 
         const options = {
-            hostname: '127.0.0.1',
-            port: 4000,
-            path: '/api/60006582-fddd-429e-a6ca-9a67cb87a273',
+            hostname: 'hngx-task5.onrender.com',
+            // hostname: '127.0.0.1',
+            // port: 4000,
+            // port: 4000,
+            path: '/api/save/dc107364-dd33-4bb3-b0fd-e6169933ab37',
             method: 'POST',
+            headers: {
+                'Content-Type': 'video/mp4',
+                'Transfer-Encoding': 'chunked',
+            }
         }
 
-        const request = http.request(options, (response) => {
+        const request = https.request(options, (response) => {
             console.log(`Server B responded with status code: ${response.statusCode}`)
             response.setEncoding('utf8');
 
             response.on('data', async function (chunk) {
-                let data = await JSON.parse(chunk)
                 console.log(chunk)
+                let data = await JSON.parse(chunk)
                 if(response.statusCode == 400){
                     readStream.destroy()
                 }

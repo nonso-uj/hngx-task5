@@ -58,7 +58,6 @@ app.get('/api/video-info/:uuid', (req, res) => {
     const uuid = req.params.uuid.toString()
     const filePath = getVideoPath(uuid)
     
-
     try{
         const file = path.join(__dirname, filePath)
         if(!fs.existsSync(file)){
